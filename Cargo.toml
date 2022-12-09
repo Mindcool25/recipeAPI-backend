@@ -12,5 +12,6 @@ sqlite = "0.30.1"
 
 dotenvy = "0.15"
 
+mongodb = {version = "2.3.1", default-features = false, features = ["async-std-runtime","sync"]}
 
-
+futures = "0.3"

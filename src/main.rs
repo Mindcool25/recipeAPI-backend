@@ -5,12 +5,29 @@ use rocket::serde::{Serialize, json::Json};
 use rocket::http::Header;
 use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
+use rocket::State;
 
 mod sql;
 mod structs;
 
 use structs::Recipe;
-use sql::get_recipe_by_id;
+use sql::MongoRepo;
+
+// mongodb://root:root@localhost:27017/?authMechanism=DEFAULT
+use mongodb::{Client, options::ClientOptions};
+
+struct RecipeBook(Client);
+
+
+#[get("/author/<author>")]
+async fn author(author:&str, mdb: &State<MongoRepo>) -> Json<Recipe> {
+    let mut out = Json(Recipe::empty());
+    for i in mdb.get_by_author(author).await {
+        out = Json(i);
+    }
+    out
+}
+
 
 // Allowing CORS
 // Needs to be enabled to allow calls to the API
@@ -34,16 +51,11 @@ impl Fairing for CORS {
 }
 
 
-#[get("/db/<id>")]
-fn db(id:i64) -> Json<Recipe> {
-    let out = get_recipe_by_id(id);
-    Json(out)
-}
-
 #[launch]
-fn rocket() -> _ {
-
+async fn rocket() -> _ {
+    let mdb = sql::MongoRepo::init();
     rocket::build()
-        .mount("/", routes![db])
+        .mount("/", routes![author])
+        .manage(mdb)
         .attach(CORS)
 }

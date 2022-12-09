@@ -1,32 +1,58 @@
-use sqlite;
+use mongodb::{bson::doc, options::{FindOptions, ClientOptions}};
+use mongodb::sync::{Client, Collection};
+
 
 use crate::structs::Recipe;
 
-pub fn get_recipe_by_id(id:i64) -> Recipe{
-    let connection = sqlite::open("test_db.db").expect("Failed to connect to db");
-    let query = "SELECT * FROM RECIPE WHERE id = ?";
-    
-    let mut statement = connection.prepare(query).unwrap();
-    statement.bind((1, id)).unwrap();
+pub struct MongoRepo {
+    col: Collection<Recipe>
+}
 
-    let mut out = Recipe {
-        id: 0,
-        title: "FAILED TO READ".to_string(),
-        author: "Mindcool24".to_string(),
-        ingredients: "null".to_string(),
-        instructions: "null".to_string(),
-        notes: "Please report that there was an error to mindcool24@jsociety.xyz".to_string(),
-    };
+impl MongoRepo {
+    pub fn init() -> Self {
+        let uri = "mongodb://root:root@localhost:27017";
+        let client = Client::with_uri_str(uri).unwrap();
+        let db = client.database("recipe_book");
+        let col: Collection<Recipe> = db.collection("recipes");
+        MongoRepo{col}
+    }
 
-    while let Ok(sqlite::State::Row) = statement.next() {
-        out = Recipe {
-            id: statement.read::<i64, _>("id").unwrap(),
-            title: statement.read::<String, _>("Title").unwrap(),
-            author: statement.read::<String, _>("Author").unwrap(),
-            ingredients: statement.read::<String, _>("Ingredients").unwrap(),
-            instructions: statement.read::<String, _>("Instructions").unwrap(),
-            notes: statement.read::<String, _>("Notes").unwrap(),
-            };
-       }
-    out
+    pub async fn get_by_author(&self, author: &str) -> Vec<Recipe> {
+        // Setting up filter and cursor
+        let filter = doc!{"author":author};
+        let find_options = FindOptions::builder().sort(doc!{"title":1}).build();
+        let mut cursor = self.col.find(filter, find_options).expect("Failed to make cursor");
+
+        let mut out: Vec<Recipe> = Vec::new();
+
+        // Getting results
+        while let Some(recipe) = cursor.next() {
+            out.push(recipe.expect("Failed to grab recipe"));
+        }
+        out
+    }
+
+}
+
+
+pub async fn get() -> String {
+    // Set options for DB
+    let mut client_options = ClientOptions::parse("mongodb://root:root@localhost:27017").expect("Failed to set options");
+    client_options.app_name = Some("Recipes".to_string());
+
+    // Connect to DB with options
+    let client = Client::with_options(client_options).expect("Failed to connect");
+
+    // Get to the recipe database and collection
+    let r_db = client.database("recipe_book");
+    let col = r_db.collection::<Recipe>("recipes");
+
+    // Set up filter and options to get the correct stuff
+    let filter = doc!{"author":"Mindcool24"};
+    let find_options = FindOptions::builder().sort(doc!{"title":1}).build();
+    let mut cursor = col.find(filter, find_options).expect("Failed to make cursor");
+    while let Some(recipe) = cursor.next(){
+        println!("{:?}", recipe.expect("Hm"));
+    }
+    "It works".to_string()
 }
