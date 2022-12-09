@@ -1,7 +1,7 @@
 #[macro_use] extern crate rocket;
 extern crate dotenvy;
 
-use rocket::serde::{Serialize, json::Json};
+use rocket::serde::json::Json;
 use rocket::http::Header;
 use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
@@ -14,10 +14,6 @@ use structs::Recipe;
 use sql::MongoRepo;
 
 // mongodb://root:root@localhost:27017/?authMechanism=DEFAULT
-use mongodb::{Client, options::ClientOptions};
-
-struct RecipeBook(Client);
-
 
 #[get("/author/<author>")]
 async fn author(author:&str, mdb: &State<MongoRepo>) -> Json<Recipe> {
