@@ -8,6 +8,8 @@ use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
 use rocket::State;
 
+use mongodb::bson::oid::ObjectId;
+
 mod sql;
 mod structs;
 
@@ -15,6 +17,11 @@ use structs::Recipe;
 use sql::MongoRepo;
 
 // mongodb://root:root@localhost:27017/?authMechanism=DEFAULT
+
+#[get("/id/<id>")]
+async fn id(id: &str, mdb: &State<MongoRepo>) -> Json<Recipe> {
+    Json(mdb.get_by_id(ObjectId::parse_str(id).expect("Failed to convert to ObjectID")).await)
+}
 
 #[get("/author/<author>")]
 async fn author(author:&str, mdb: &State<MongoRepo>) -> Json<Recipe> {
@@ -59,8 +66,7 @@ impl Fairing for CORS {
 async fn rocket() -> _ {
     let mdb = sql::MongoRepo::init();
     rocket::build()
-        .mount("/", routes![submit])
-        .mount("/", routes![author])
+        .mount("/", routes![submit, author, id])
         .manage(mdb)
         .attach(CORS)
 }

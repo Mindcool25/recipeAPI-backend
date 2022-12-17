@@ -1,7 +1,5 @@
 use rocket::serde::{Serialize, Deserialize};
 
-use std::borrow::Borrow;
-
 use mongodb::bson::oid::ObjectId;
 
 #[derive(Debug, Serialize, Deserialize)]
