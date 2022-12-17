@@ -2,6 +2,7 @@
 extern crate dotenvy;
 
 use rocket::serde::json::Json;
+use rocket::serde::json;
 use rocket::http::Header;
 use rocket::{Request, Response};
 use rocket::fairing::{Fairing, Info, Kind};
@@ -22,6 +23,13 @@ async fn author(author:&str, mdb: &State<MongoRepo>) -> Json<Recipe> {
         out = Json(i);
     }
     out
+}
+
+#[post("/submit", data="<input>")]
+async fn submit(input:String, mdb: &State<MongoRepo>) -> String {
+    let r_in: structs::NewRecipe = json::from_str(&input).expect("huh");
+    mdb.add_recipe(r_in).await;
+    "Successfully Submitted!".to_string()
 }
 
 
@@ -51,6 +59,7 @@ impl Fairing for CORS {
 async fn rocket() -> _ {
     let mdb = sql::MongoRepo::init();
     rocket::build()
+        .mount("/", routes![submit])
         .mount("/", routes![author])
         .manage(mdb)
         .attach(CORS)
