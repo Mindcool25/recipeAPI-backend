@@ -39,8 +39,6 @@ impl MongoRepo {
         let filter = doc!{"_id": id};
         let find_options = FindOneOptions::builder().build();
         let cursor = self.col.find_one(filter, find_options).expect("Failed to make cursor");
-
-        let mut out: Vec<Recipe> = Vec::new();
         
         cursor.expect("Failed to grab recipe")
     }

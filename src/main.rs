@@ -14,6 +14,7 @@ mod sql;
 mod structs;
 
 use structs::Recipe;
+use structs::Recipes;
 use sql::MongoRepo;
 
 // mongodb://root:root@localhost:27017/?authMechanism=DEFAULT
@@ -24,17 +25,17 @@ async fn id(id: &str, mdb: &State<MongoRepo>) -> Json<Recipe> {
 }
 
 #[get("/author/<author>")]
-async fn author(author:&str, mdb: &State<MongoRepo>) -> Json<Recipe> {
-    let mut out = Json(Recipe::empty());
+async fn author(author:&str, mdb: &State<MongoRepo>) ->Json<Recipes> {
+    let mut out = Recipes{r_list: vec![]};
     for i in mdb.get_by_author(author).await {
-        out = Json(i);
+        out.r_list.push(i);
     }
-    out
+    Json(out)
 }
 
 #[post("/submit", data="<input>")]
 async fn submit(input:String, mdb: &State<MongoRepo>) -> String {
-    let r_in: structs::NewRecipe = json::from_str(&input).expect("huh");
+    let r_in: structs::NewRecipe = json::from_str(&input).expect("Failed to convert to JSON");
     mdb.add_recipe(r_in).await;
     "Successfully Submitted!".to_string()
 }

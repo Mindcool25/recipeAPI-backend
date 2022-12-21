@@ -37,6 +37,13 @@ pub struct NewRecipe {
     pub notes: String,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+#[serde(crate = "rocket::serde")]
+pub struct Recipes {
+    pub r_list: Vec<Recipe>,
+}
+
+
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(crate = "rocket::serde")]
