@@ -34,6 +34,18 @@ impl MongoRepo {
         }
         out
     }
+
+    pub async fn get_all(&self) -> Vec<Recipe> {
+        let cursor = self.col.find(None, None).expect("Failed to make cursor");
+
+        let mut out: Vec<Recipe> = Vec::new();
+
+        // Getting results
+        for recipe in cursor {
+            out.push(recipe.expect("Failed to grap recipe"));
+        }
+        out
+    }
     
     pub async fn get_by_id(&self, id: ObjectId) -> Recipe{
         let filter = doc!{"_id": id};
@@ -41,6 +53,20 @@ impl MongoRepo {
         let cursor = self.col.find_one(filter, find_options).expect("Failed to make cursor");
         
         cursor.expect("Failed to grab recipe")
+    }
+
+    pub async fn get_by_title(&self, title: &str) -> Vec<Recipe> {
+        let filter = doc!{"title":{"$regex":format!(".*(?i){}.*", title)}};
+        let find_options = FindOptions::builder().sort(doc!{"title":1}).build();
+        let cursor = self.col.find(filter, find_options).expect("Failed to make cursor.");
+
+        let mut out: Vec<Recipe> = Vec::new();
+
+        // Getting results
+        for recipe in cursor {
+            out.push(recipe.expect("Failed to grap recipe"));
+        }
+        out
     }
 
     pub async fn add_recipe(&self, recipe: NewRecipe) {

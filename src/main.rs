@@ -24,10 +24,28 @@ async fn id(id: &str, mdb: &State<MongoRepo>) -> Json<Recipe> {
     Json(mdb.get_by_id(ObjectId::parse_str(id).expect("Failed to convert to ObjectID")).await)
 }
 
+#[get("/all")]
+async fn all(mdb: &State<MongoRepo>) -> Json<Recipes> {
+    let mut out = Recipes{r_list: vec![]};
+    for i in mdb.get_all().await {
+        out.r_list.push(i);
+    }
+    Json(out)
+}
+
 #[get("/author/<author>")]
 async fn author(author:&str, mdb: &State<MongoRepo>) ->Json<Recipes> {
     let mut out = Recipes{r_list: vec![]};
     for i in mdb.get_by_author(author).await {
+        out.r_list.push(i);
+    }
+    Json(out)
+}
+
+#[get("/title/<title>")]
+async fn title(title: &str, mdb: &State<MongoRepo>) -> Json<Recipes> {
+    let mut out = Recipes{r_list: vec![]};
+    for i in mdb.get_by_title(title).await {
         out.r_list.push(i);
     }
     Json(out)
@@ -67,7 +85,7 @@ impl Fairing for CORS {
 async fn rocket() -> _ {
     let mdb = sql::MongoRepo::init();
     rocket::build()
-        .mount("/", routes![submit, author, id])
+        .mount("/", routes![submit, author, id, all, title])
         .manage(mdb)
         .attach(CORS)
 }
