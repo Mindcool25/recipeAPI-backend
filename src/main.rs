@@ -19,11 +19,6 @@ use sql::MongoRepo;
 
 // mongodb://root:root@localhost:27017/?authMechanism=DEFAULT
 
-#[get("/id/<id>")]
-async fn id(id: &str, mdb: &State<MongoRepo>) -> Json<Recipe> {
-    Json(mdb.get_by_id(ObjectId::parse_str(id).expect("Failed to convert to ObjectID")).await)
-}
-
 #[get("/all")]
 async fn all(mdb: &State<MongoRepo>) -> Json<Recipes> {
     let mut out = Recipes{r_list: vec![]};
@@ -32,6 +27,12 @@ async fn all(mdb: &State<MongoRepo>) -> Json<Recipes> {
     }
     Json(out)
 }
+
+#[get("/id/<id>")]
+async fn id(id: &str, mdb: &State<MongoRepo>) -> Json<Recipe> {
+    Json(mdb.get_by_id(ObjectId::parse_str(id).expect("Failed to convert to ObjectID")).await)
+}
+
 
 #[get("/author/<author>")]
 async fn author(author:&str, mdb: &State<MongoRepo>) ->Json<Recipes> {
